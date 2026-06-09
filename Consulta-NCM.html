@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consulta NCM</title>
+
+<style>
+:root {
+  --primary: rgb(255, 0, 127);
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: #ffffff;
+  margin: 0;
+  padding: 20px;
+}
+
+h1 {
+  color: var(--primary);
+  margin-bottom: 20px;
+}
+
+.search-box {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+input {
+  flex: 1;
+  padding: 12px;
+  border: 2px solid var(--primary);
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+button {
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  background: var(--primary);
+  color: #fff;
+  cursor: pointer;
+}
+
+.result {
+  margin-top: 20px;
+}
+
+.card {
+  background: #fafafa;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-left: 4px solid var(--primary);
+}
+
+.label {
+  font-weight: bold;
+}
+
+.error {
+  color: red;
+}
+
+.loading {
+  color: #555;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Consulta NCM</h1>
+
+<div class="search-box">
+  <input id="ncmInput" placeholder="0000.00.00">
+  <button onclick="limpar()">Limpar</button>
+</div>
+
+<div id="result" class="result"></div>
+
+<script>
+let cache = JSON.parse(localStorage.getItem('ncmCache') || '{}');
+
+// Máscara
+document.getElementById('ncmInput').addEventListener('input', function(e) {
+  let v = e.target.value.replace(/\D/g, '').slice(0, 8);
+
+  if (v.length > 4 && v.length <= 6) {
+    v = v.replace(/(\d{4})(\d+)/, '$1.$2');
+  } else if (v.length > 6) {
+    v = v.replace(/(\d{4})(\d{2})(\d+)/, '$1.$2.$3');
+  }
+
+  e.target.value = v;
+});
+
+// Busca automática ao pressionar Enter
+document.getElementById('ncmInput').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') buscar();
+});
+
+async function buscar() {
+  const input = document.getElementById('ncmInput').value.replace(/\D/g, '');
+  const resultDiv = document.getElementById('result');
+
+  if (!input) {
+    resultDiv.innerHTML = '';
+    return;
+  }
+
+  // Cache
+  if (cache[input]) {
+    render(cache[input]);
+    return;
+  }
+
+  resultDiv.innerHTML = '<p class="loading">Carregando...</p>';
+
+  try {
+    const res = await fetch(`https://brasilapi.com.br/api/ncm/v1?search=${input}`);
+    const data = await res.json();
+
+    if (!data.length) {
+      resultDiv.innerHTML = '<p class="error">Nenhum resultado encontrado</p>';
+      return;
+    }
+
+    cache[input] = data;
+    localStorage.setItem('ncmCache', JSON.stringify(cache));
+
+    render(data);
+
+  } catch {
+    resultDiv.innerHTML = '<p class="error">Erro na consulta</p>';
+  }
+}
+
+// Render
+function render(data) {
+  const resultDiv = document.getElementById('result');
+
+  resultDiv.innerHTML = '';
+
+  data.forEach(item => {
+    resultDiv.innerHTML += `
+      <div class="card">
+        <div><span class="label">Código:</span> ${item.codigo}</div>
+        <div><span class="label">Descrição:</span> ${item.descricao}</div>
+        <div><span class="label">Data Início:</span> ${item.data_inicio || '-'}</div>
+        <div><span class="label">Data Fim:</span> ${item.data_fim || '-'}</div>
+      </div>
+    `;
+  });
+}
+
+// Limpar
+function limpar() {
+  document.getElementById('ncmInput').value = '';
+  document.getElementById('result').innerHTML = '';
+}
+</script>
+
+</body>
+</html>
