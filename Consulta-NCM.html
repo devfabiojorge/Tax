@@ -84,7 +84,7 @@ button {
 <script>
 let cache = JSON.parse(localStorage.getItem('ncmCache') || '{}');
 
-// Máscara
+// Máscara NCM
 document.getElementById('ncmInput').addEventListener('input', function(e) {
   let v = e.target.value.replace(/\D/g, '').slice(0, 8);
 
@@ -97,7 +97,7 @@ document.getElementById('ncmInput').addEventListener('input', function(e) {
   e.target.value = v;
 });
 
-// Busca automática ao pressionar Enter
+// Enter para buscar
 document.getElementById('ncmInput').addEventListener('keypress', function(e) {
   if (e.key === 'Enter') buscar();
 });
@@ -138,10 +138,9 @@ async function buscar() {
   }
 }
 
-// Render
+// Render (somente Código e Descrição)
 function render(data) {
   const resultDiv = document.getElementById('result');
-
   resultDiv.innerHTML = '';
 
   data.forEach(item => {
@@ -149,8 +148,6 @@ function render(data) {
       <div class="card">
         <div><span class="label">Código:</span> ${item.codigo}</div>
         <div><span class="label">Descrição:</span> ${item.descricao}</div>
-        <div><span class="label">Data Início:</span> ${item.data_inicio || '-'}</div>
-        <div><span class="label">Data Fim:</span> ${item.data_fim || '-'}</div>
       </div>
     `;
   });
